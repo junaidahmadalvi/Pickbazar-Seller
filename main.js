@@ -1,9 +1,8 @@
 const express = require("express");
-// const connection =require("./dbConnection");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const connection = require("./config/dbConnection");
+const connection = require("./config/db");
 var bodyParser = require("body-parser");
 
 //---------------Controllers-----------------------
@@ -13,7 +12,7 @@ var bodyParser = require("body-parser");
 
 // require all routes
 
-const customerRoute = require("./routes/customerRoute");
+const customerRoute = require("./routes/customer.route");
 // const toDoListRoutes = require("./routes/toDoListRoutes");
 
 // DB-Connection

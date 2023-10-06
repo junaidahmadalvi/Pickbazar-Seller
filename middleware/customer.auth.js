@@ -1,19 +1,14 @@
-const { User } = require("../Schemas/userSchema");
+const { Customer } = require("../models/customer.model");
 
 var ObjectId = require("mongodb").ObjectId;
 const jwt = require("jsonwebtoken");
 const JWT_SECRET_KEY = "jd897#$%dsjY*%#ldEddwmQ";
-
 const env = require("dotenv").config();
+
 const bcrypt = require("bcrypt");
-// const jwt = require("jsonwebtoken");
-// import jwt from 'jsonwebtoken'
-const connection = require("../dbConnection");
-const emailvalidator = require("email-validator");
 
 module.exports = {
   //----------< Authentification>  ------------------
-  // id: 646fa5d66e3f6f523e3749a6
 
   authorizeAdmin: async (req, res, next) => {
     try {
@@ -86,7 +81,7 @@ module.exports = {
   //   }
   // },
 
-  authenticateUser: async (req, res, next) => {
+  authenticateCustomer: async (req, res, next) => {
     const authorizationHeader = req.headers["authorization"];
     console.log("Authoriazation", authorizationHeader);
     // Check if the Authorization header exists and starts with 'Bearer '
@@ -103,43 +98,50 @@ module.exports = {
         } else {
           const decode = await jwt.verify(token, JWT_SECRET_KEY);
 
-          const id = decode.userID;
-          // var userId = decode.id;
-          // Get User from Token
-          const user = await User.findById(id);
+          const customerId = decode.customerId;
+          req.customerId = customerId;
+          // var customerId = decode.id;
+          // Get Customer from Token
+          const customer = await Customer.findById(customerId);
 
-          if (user) {
-            console.log("user authenticated");
-            console.log("user", user);
+          if (customer) {
+            console.log("customer authenticated");
+            console.log("customer", customer);
             next();
           } else {
             res
               .status(403)
-              .json({ message: "Authentication failed. Invalid token." });
+              .json({ error: "Authentication failed. Invalid token." });
           }
         }
       } catch (error) {
-        return res.status(401).json({ message: error.message });
+        return res.status(401).json({
+          status: "fail",
+          error: error.message,
+        });
       }
     } else {
-      res.status(401).json({ message: "Authentication token is missing." });
+      res.status(401).json({
+        status: "fail",
+        message: "Authentication token is missing.",
+      });
     }
 
     // Verify and decode the token
     // console.log("--key----", env.JWT_SECRET_KEY);
     // console.log(jwt.verify(token, "jd897#$%dsjY*%#ldEddwmQ"), "RESULT");
-    // jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
+    // jwt.verify(token, JWT_SECRET_KEY, (err, customer) => {
     //   if (err) {
     //     return res
     //       .status(403)
     //       .json({ message: "Authentication failed. Invalid token." });
     //   }
 
-    //   // If the token is valid, store the user information in the request for future use
-    //   req.user = user;
+    //   // If the token is valid, store the customer information in the request for future use
+    //   req.customer = customer;
 
     //   // Continue with the next middleware or route handler
-    //   console.log("user authenticated");
+    //   console.log("customer authenticated");
     //   next();
     // });
     // let token;
@@ -161,14 +163,14 @@ module.exports = {
     // const decode = await jwt.verify(token, process.env.JWT_SEC);
 
     // const iat = decode.iat;
-    // var userId = decode.id;
-    // // Get User from Token
-    // req.user = await User.findById(decode.id).select('-password');
+    // var customerId = decode.id;
+    // // Get Customer from Token
+    // req.customer = await Customer.findById(decode.id).select('-password');
     // const unix = moment.unix(iat);
     // const iatDate = new Date(unix);
     // const iatTime = iatDate.getTime();
 
-    // const createDate = new Date(req.user.updatedAt);
+    // const createDate = new Date(req.customer.updatedAt);
     // const createTime = createDate.getTime();
     // if (createTime > iatTime) {
     //   return res.status(403).send({ message: 'sorry, token is expire' });
@@ -178,7 +180,7 @@ module.exports = {
     //     console.log(error);
     //     res
     //       .status(401)
-    //       .send({ status: "failed", message: "Unauthorized User" });
+    //       .send({ status: "failed", message: "Unauthorized Customer" });
     //   }
     // }
     // if (!token) {

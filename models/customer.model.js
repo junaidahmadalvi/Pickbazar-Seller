@@ -94,8 +94,10 @@ const customerModel = new mongoose.Schema(
 
 const pakistanPhoneNumberRegex = /^(?:\+92|0)[1-9]\d{9}$/; // Pakistan phone number pattern
 
-// Customer Yup(validating schema)
-const customerYupSchema = yup.object().shape({
+//---------- Customer Yup(validating schemas)---------
+
+// Yup register customer schema
+const customerRegisterSchema = yup.object().shape({
   name: yup
     .string()
     .required("Name is required")
@@ -158,7 +160,20 @@ const customerYupSchema = yup.object().shape({
   }),
 });
 
+// Yup Login customer schema
+const customerLoginSchema = yup.object().shape({
+  email: yup
+    .string()
+    .required("Email is required")
+    .email("Invalid email format"),
+
+  password: yup
+    .string()
+    .required("Password is required")
+    .min(4, "Password length must be 4"),
+});
+
 // <============create collection============>
 const Customer = new mongoose.model("Customer", customerModel);
 
-module.exports = { Customer, customerYupSchema };
+module.exports = { Customer, customerRegisterSchema, customerLoginSchema };
