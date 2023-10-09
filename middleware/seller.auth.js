@@ -1,4 +1,4 @@
-const { Customer } = require("../models/customer.model");
+const { Seller } = require("../models/seller.model");
 
 var ObjectId = require("mongodb").ObjectId;
 const jwt = require("jsonwebtoken");
@@ -9,7 +9,7 @@ const bcrypt = require("bcrypt");
 module.exports = {
   //----------< Authentification>  ------------------
 
-  authenticateCustomer: async (req, res, next) => {
+  authenticateSeller: async (req, res, next) => {
     const authorizationHeader = req.headers["authorization"];
 
     // Check if the Authorization header exists and starts with 'Bearer '
@@ -26,14 +26,14 @@ module.exports = {
         } else {
           const decode = await jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-          const customerId = decode.customerId;
-          req.customerId = customerId;
+          const sellerId = decode.sellerId;
+          req.sellerId = sellerId;
 
-          // Get Customer from Token
-          const customer = await Customer.findById(customerId);
+          // Get Seller from Token
+          const seller = await Seller.findById(sellerId);
 
-          if (customer) {
-            console.log("customer authenticated");
+          if (seller) {
+            console.log("seller authenticated");
             next();
           } else {
             res

@@ -24,6 +24,9 @@ const customerModel = new mongoose.Schema(
       type: String,
       default: "active",
     },
+    avatar: {
+      type: String,
+    },
     wallet: {
       type: Number,
     },
@@ -122,6 +125,7 @@ const customerRegisterSchema = yup.object().shape({
     .min(4, "Confirm Password length must be 4"),
 
   status: yup.string().default("active"),
+  avatar: yup.string(),
 
   wallet: yup.number().positive("Wallet must be a positive number"),
 
@@ -161,6 +165,8 @@ const customerUpdateSchema = yup.object().shape({
   password: yup.string().min(4, "Password length must be 4"),
 
   status: yup.string().default("active"),
+
+  avatar: yup.string(),
 
   wallet: yup.number().positive("Wallet must be a positive number"),
 

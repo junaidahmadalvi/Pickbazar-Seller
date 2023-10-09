@@ -2,7 +2,6 @@ const { Admin } = require("../models/admin.model");
 
 var ObjectId = require("mongodb").ObjectId;
 const jwt = require("jsonwebtoken");
-const JWT_SECRET_KEY = "jd897#$%dsjY*%#ldEddwmQ";
 const env = require("dotenv").config();
 
 const bcrypt = require("bcrypt");
@@ -24,7 +23,7 @@ module.exports = {
             .status(401)
             .json({ message: "Authentication token is missing." });
         } else {
-          const decode = await jwt.verify(token, JWT_SECRET_KEY);
+          const decode = await jwt.verify(token, process.env.JWT_SECRET_KEY);
 
           const adminId = decode.adminId;
           req.adminId = adminId;

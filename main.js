@@ -7,8 +7,9 @@ var bodyParser = require("body-parser");
 
 // require all routes
 
-const customerRoute = require("./routes/customer.route");
 const adminRoute = require("./routes/admin.route");
+const customerRoute = require("./routes/customer.route");
+const sellerRoute = require("./routes/seller.route");
 
 // DB-Connection
 connection();
@@ -28,11 +29,14 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+// admin route
+app.use("/api/admin", adminRoute);
+
 // customer route
 app.use("/api/customer", customerRoute);
 
-// admin route
-app.use("/api/admin", adminRoute);
+// seller route
+app.use("/api/seller", sellerRoute);
 
 const PORT = process.env.PORT || 4000;
 app.listen(
