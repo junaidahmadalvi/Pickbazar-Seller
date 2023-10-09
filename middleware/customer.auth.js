@@ -12,14 +12,14 @@ module.exports = {
 
   authenticateCustomer: async (req, res, next) => {
     const authorizationHeader = req.headers["authorization"];
-    console.log("Authoriazation", authorizationHeader);
+
     // Check if the Authorization header exists and starts with 'Bearer '
     if (authorizationHeader && authorizationHeader.startsWith("Bearer ")) {
       // Extract the token (remove 'Bearer ' from the beginning)
       try {
         const token = authorizationHeader.slice(7);
+
         // Check if a token is provided
-        console.log("token at middleware", token);
         if (!token) {
           return res
             .status(401)
@@ -29,13 +29,12 @@ module.exports = {
 
           const customerId = decode.customerId;
           req.customerId = customerId;
-          // var customerId = decode.id;
+
           // Get Customer from Token
           const customer = await Customer.findById(customerId);
 
           if (customer) {
             console.log("customer authenticated");
-            console.log("customer", customer);
             next();
           } else {
             res

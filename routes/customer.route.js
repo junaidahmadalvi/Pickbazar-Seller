@@ -6,6 +6,7 @@ const customerController = require("../controllers/customer.controller");
 
 // require middleware
 const { authenticateCustomer } = require("../middleware/customer.auth");
+const { authenticateAdmin } = require("../middleware/admin.auth");
 //----------------------------------------------------------------------------
 
 //              User CRUD
@@ -18,7 +19,7 @@ router.post("/", customerController.registerCustomer);
 router.post("/login", customerController.loginCustomer);
 
 // get all customers
-router.get("/", customerController.getAllCustomer);
+router.get("/", authenticateAdmin, customerController.getAllCustomer);
 
 // get single customer
 router.get("/:customerId", customerController.getCustomerById);
@@ -43,6 +44,10 @@ router.put(
 );
 //---Delete Customer by id
 
-router.delete("/:customerId", customerController.deleteCustomer);
+router.delete(
+  "/:customerId",
+  authenticateAdmin,
+  customerController.deleteCustomer
+);
 
 module.exports = router;

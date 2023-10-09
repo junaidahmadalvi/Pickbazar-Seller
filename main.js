@@ -5,15 +5,10 @@ const cors = require("cors");
 const connection = require("./config/db");
 var bodyParser = require("body-parser");
 
-//---------------Controllers-----------------------
-
-// const userController = require("./Controllers/userController");
-// const postController = require("./Controllers/postController");
-
 // require all routes
 
 const customerRoute = require("./routes/customer.route");
-// const toDoListRoutes = require("./routes/toDoListRoutes");
+const adminRoute = require("./routes/admin.route");
 
 // DB-Connection
 connection();
@@ -33,11 +28,11 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-//Customer route
+// customer route
 app.use("/api/customer", customerRoute);
 
-// // Category route
-// app.use("/api/toDoList", toDoListRoutes);
+// admin route
+app.use("/api/admin", adminRoute);
 
 const PORT = process.env.PORT || 4000;
 app.listen(

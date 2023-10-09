@@ -41,27 +41,19 @@ module.exports = {
         } else {
           const salt = await bcrypt.genSalt(Number(process.env.SALT));
           const hashpswd = await bcrypt.hash(customerData?.password, salt);
-          console.log("hashpswd", hashpswd);
           let requestData = {
             name: customerData?.name,
             email: customerData?.email,
             password: hashpswd,
           };
-          // if (req?.body && req?.body?.status) {
-          //   requestData?.status = req?.body?.status;
-          // }
-          console.log("requestData", requestData);
 
           customer = new Customer(requestData);
 
-          console.log("customer", customer);
-
           const result = await customer.save();
-          console.log("result", result);
 
           res.status(200).send({
             status: "success",
-            message: "Student added Successfully",
+            message: "Customer added Successfully",
             data: result,
           });
         }
@@ -107,10 +99,8 @@ module.exports = {
 
       if (customer != null) {
         // check given password match with DB password of particular customer OR not and return true/false
-        console.log("DB Passsword", customer.password);
-        console.log("given Passsword", password);
+
         const isMatch = await bcrypt.compare(password, customer?.password);
-        console.log("Password match", isMatch);
 
         if (customer.email === email && isMatch) {
           if (customer.status === "active") {
@@ -121,12 +111,10 @@ module.exports = {
               { expiresIn: "2d" }
             );
 
-            // console.log("token", token);
             res.setHeader("Authorization", `Bearer ${token}`);
 
             //remove password field from customer object
             delete customer?.password;
-            console.log("--------customer--------", customer);
             res.status(200).send({
               status: "success",
               message: "Login Success",
@@ -209,11 +197,9 @@ module.exports = {
   getCustomerById: async (req, res) => {
     try {
       const customerId = req.params?.customerId;
-      console.log("id at controller", customerId);
 
       // get desired customer data except password
       const customer = await Customer.findById(customerId, "-password");
-      console.log("customer", customer);
 
       if (customer) {
         res.status(200).send({
@@ -240,10 +226,7 @@ module.exports = {
     try {
       const customerId = req.customerId;
 
-      console.log("customerId", customerId);
       const updateFields = req.body;
-      console.log("fields got from body to update----", updateFields);
-      // Get the customer document by ID
 
       updateFields &&
         (await customerUpdateSchema.validate(updateFields, {
@@ -258,7 +241,6 @@ module.exports = {
           .json({ status: "fail", error: "Customer not found" });
       }
 
-      console.log("customer object before update--", customer);
       // Loop through the updateFields object to dynamically update each field
       for (const field in updateFields) {
         if (Object.hasOwnProperty.call(updateFields, field)) {
@@ -269,7 +251,6 @@ module.exports = {
           }
         }
       }
-      console.log("customer object after update------------", customer);
 
       // Save the updated customer document
       const updatedCustomer = await customer.save();
@@ -329,7 +310,6 @@ module.exports = {
             if (newPassword === confirmPassword) {
               const salt = await bcrypt.genSalt(Number(process.env.SALT));
               const hashedPassword = await bcrypt.hash(newPassword, salt);
-              console.log("hashedPassword", hashedPassword);
 
               // update password field in privious data
               customer.password = hashedPassword;
