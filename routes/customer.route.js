@@ -35,6 +35,12 @@ router.put(
   customerController.updateCustomerAddresses
 );
 
+//endpoint to update customer Password
+router.put(
+  "/password",
+  authenticateCustomer,
+  customerController.updateCustomerPassword
+);
 //---Delete Customer by id
 
 router.delete("/:customerId", customerController.deleteCustomer);

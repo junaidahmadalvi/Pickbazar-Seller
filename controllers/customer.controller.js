@@ -306,6 +306,66 @@ module.exports = {
     }
   },
 
+  updateCustomerPassword: async (req, res) => {
+    try {
+      const customerId = req.customerId;
+      const { oldPassword, newPassword, confirmPassword } = req?.body;
+
+      if (!oldPassword || !newPassword || !confirmPassword) {
+        res.status(400).json({
+          status: "fail",
+          error: "All fields are required",
+        });
+      } else {
+        const customer = await Customer.findById(customerId);
+        if (!customer) {
+          return res
+            .status(404)
+            .json({ status: "fail", error: "Customer not found" });
+        } else {
+          const isMatch = await bcrypt.compare(oldPassword, customer?.password);
+
+          if (isMatch) {
+            if (newPassword === confirmPassword) {
+              const salt = await bcrypt.genSalt(Number(process.env.SALT));
+              const hashedPassword = await bcrypt.hash(newPassword, salt);
+              console.log("hashedPassword", hashedPassword);
+
+              // update password field in privious data
+              customer.password = hashedPassword;
+
+              // Save the updated customer document
+              const updatedCustomer = await customer.save();
+
+              updatedCustomer &&
+                res.status(200).json({
+                  status: "success",
+                  message: "Password updated successfully",
+                  data: updatedCustomer,
+                });
+            } else {
+              res.status(400).json({
+                status: "fail",
+                error: "New Password And Confirm Password must be same",
+              });
+            }
+          } else {
+            res.status(400).json({
+              status: "fail",
+              error: "Invalid old Password",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
   updateCustomerAddresses: async (req, res) => {
     try {
       const customerId = req.customerId;
