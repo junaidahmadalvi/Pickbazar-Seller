@@ -10,6 +10,7 @@ var bodyParser = require("body-parser");
 const adminRoute = require("./routes/admin.route");
 const customerRoute = require("./routes/customer.route");
 const sellerRoute = require("./routes/seller.route");
+const authorRoute = require("./routes/auhtor.route");
 
 // DB-Connection
 connection();
@@ -23,11 +24,12 @@ app.use(cors());
 app.use(express.json());
 // to parse data in json
 app.use(bodyParser.json());
-// var jsonParser = bodyParser.json()
 
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
+
+//-----defining base routes of all entities--------
 
 // admin route
 app.use("/api/admin", adminRoute);
@@ -38,6 +40,10 @@ app.use("/api/customer", customerRoute);
 // seller route
 app.use("/api/seller", sellerRoute);
 
+// author route
+app.use("/api/author", authorRoute);
+
+// start node server
 const PORT = process.env.PORT || 4000;
 app.listen(
   PORT,

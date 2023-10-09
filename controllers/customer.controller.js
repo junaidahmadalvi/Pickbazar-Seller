@@ -99,7 +99,6 @@ module.exports = {
 
       if (customer != null) {
         // check given password match with DB password of particular customer OR not and return true/false
-
         const isMatch = await bcrypt.compare(password, customer?.password);
 
         if (customer.email === email && isMatch) {
