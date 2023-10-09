@@ -133,31 +133,6 @@ const customerRegisterSchema = yup.object().shape({
       pakistanPhoneNumberRegex,
       "Contact number must in 03XXXXXXXXX format"
     ),
-
-  addresses: yup.object().shape({
-    billingAddress: yup.object().shape({
-      title: yup.string(),
-      country: yup.string(),
-      city: yup.string(),
-      state: yup.string(),
-      zip: yup
-        .number()
-        .positive("Billing address Zip must be a positive number")
-        .max(100000, "Billing address Zip should be a 4-digit number"),
-      streetAddress: yup.string(),
-    }),
-    shippingAddress: yup.object().shape({
-      title: yup.string(),
-      country: yup.string(),
-      city: yup.string(),
-      state: yup.string(),
-      zip: yup
-        .number()
-        .positive("Billing address Zip must be a positive number")
-        .max(100000, "Billing address Zip should be a 4-digit number"),
-      streetAddress: yup.string(),
-    }),
-  }),
 });
 
 // Yup Login customer schema
@@ -173,7 +148,65 @@ const customerLoginSchema = yup.object().shape({
     .min(4, "Password length must be 4"),
 });
 
+const customerUpdateSchema = yup.object().shape({
+  name: yup
+    .string()
+    .matches(
+      /^[A-Za-z\s]+$/,
+      "Only alphabets and spaces are allowed in the name"
+    ),
+
+  email: yup.string().email("Invalid email format"),
+
+  password: yup.string().min(4, "Password length must be 4"),
+
+  status: yup.string().default("active"),
+
+  wallet: yup.number().positive("Wallet must be a positive number"),
+
+  bio: yup.string(),
+
+  contactNumber: yup
+    .string()
+    .matches(
+      pakistanPhoneNumberRegex,
+      "Contact number must in 03XXXXXXXXX format"
+    ),
+});
+
+const customerAddressesUpdateSchema = yup.object().shape({
+  addresses: yup.object().shape({
+    billingAddress: yup.object().shape({
+      title: yup.string(),
+      country: yup.string(),
+      city: yup.string(),
+      state: yup.string(),
+      zip: yup
+        .number()
+        .positive("Zip must be a positive number")
+        .max(100000, "Zip can maximum have 5-digit number"),
+      streetAddress: yup.string(),
+    }),
+    shippingAddress: yup.object().shape({
+      title: yup.string(),
+      country: yup.string(),
+      city: yup.string(),
+      state: yup.string(),
+      zip: yup
+        .number()
+        .positive("Zip must be a positive number")
+        .max(99999, "Zip can maximum have 5-digit number"),
+      streetAddress: yup.string(),
+    }),
+  }),
+});
 // <============create collection============>
 const Customer = new mongoose.model("Customer", customerModel);
 
-module.exports = { Customer, customerRegisterSchema, customerLoginSchema };
+module.exports = {
+  Customer,
+  customerRegisterSchema,
+  customerLoginSchema,
+  customerUpdateSchema,
+  customerAddressesUpdateSchema,
+};

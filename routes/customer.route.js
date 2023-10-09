@@ -1,13 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-// const {
-//   setUser,
-//   getUser,
-//   logoutUser,
-//   changePassword,
-// } = require('../controllers/userController');
-
 // require controller
 const customerController = require("../controllers/customer.controller");
 
@@ -18,10 +11,10 @@ const { authenticateCustomer } = require("../middleware/customer.auth");
 //              User CRUD
 //----------------------------------------------------------------------------
 
-// router.get('/users', userController.getUser );0
-
+// customer Register
 router.post("/", customerController.registerCustomer);
 
+// Customer Login
 router.post("/login", customerController.loginCustomer);
 
 // get all customers
@@ -32,14 +25,14 @@ router.get("/:customerId", customerController.getCustomerById);
 
 // //-----------Update Data----------------------
 
-// // router.use(express.json())
-router.put("/", authenticateCustomer, customerController.updateCustomerInfo);
+// dynamic update any field of customer (Single or multiple)
+router.put("/", authenticateCustomer, customerController.updateCustomer);
 
-//-------update User STATUS --------------
-router.patch(
-  "/:fieldName",
+//endpoint to update customer address(nested document)
+router.put(
+  "/addresses",
   authenticateCustomer,
-  customerController.updateCustomerProperty
+  customerController.updateCustomerAddresses
 );
 
 //---Delete Customer by id

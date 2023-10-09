@@ -9,6 +9,8 @@ const {
   Customer,
   customerRegisterSchema,
   customerLoginSchema,
+  customerUpdateSchema,
+  customerAddressesUpdateSchema,
 } = require("../models/customer.model");
 
 module.exports = {
@@ -234,53 +236,21 @@ module.exports = {
     }
   },
 
-  updateCustomerInfo: async (req, res) => {
+  updateCustomer: async (req, res) => {
     try {
-      const customerId = req?.customerId;
+      const customerId = req.customerId;
 
-      let { name, bio } = req.body;
       console.log("customerId", customerId);
-      if (!name || !bio) {
-        res.status(400).json({
-          status: "fail",
-          error: "All Fields Required",
-        });
-      } else {
-        const updateResult = await Customer.updateOne(
-          { _id: customerId },
-          { $set: { name, bio } }
-        );
-        console.log("updateResult", updateResult);
-        if (updateResult.modifiedCount === 1) {
-          res.status(200).send({
-            status: "success",
-            message: "Customer updated",
-            data: updateResult,
-          });
-        } else {
-          res.status(400).send({ message: "Customer not found" });
-        }
-      }
-    } catch (error) {
-      console.log(`Internal server error:  ${error}`);
-      res.status(500).json({
-        status: "fail",
-        error: `Internal server error`,
-      });
-    }
-  },
-
-  updateCustomerProperty: async (req, res) => {
-    try {
-      const customerId = req?.customerId;
-      const fieldName = req.params.fieldName;
-      const newValue = req.body[fieldName];
-
-      console.log(fieldName, " :", newValue);
-
+      const updateFields = req.body;
+      console.log("fields got from body to update----", updateFields);
       // Get the customer document by ID
+
+      updateFields &&
+        (await customerUpdateSchema.validate(updateFields, {
+          abortEarly: false,
+        }));
+
       const customer = await Customer.findById(customerId);
-      console.log("customer before updatation", customer);
 
       if (!customer) {
         return res
@@ -288,32 +258,135 @@ module.exports = {
           .json({ status: "fail", error: "Customer not found" });
       }
 
-      // Check if the field exists in the customer schema
-      if (Customer.schema.path(fieldName)) {
-        if (!newValue) {
-          res
-            .status(500)
-            .json({ status: "fail", error: `${fieldName} is Required` });
-        } else {
-          // Update the field with the new value
-          customer[fieldName] = newValue;
-          console.log("customer after updatation", customer);
-
-          // Save the updated customer document
-          const updatedCustomer = await customer.save();
-          console.log("--updatedCustomer---", updatedCustomer);
-          res.status(200).json({
-            status: "success",
-            message: ` ${fieldName} is updated successfully`,
-            data: updatedCustomer,
-          });
+      console.log("customer object before update--", customer);
+      // Loop through the updateFields object to dynamically update each field
+      for (const field in updateFields) {
+        if (Object.hasOwnProperty.call(updateFields, field)) {
+          // Check if the field exists in the customer schema
+          if (customer.schema.path(field)) {
+            // Update the field with the new value
+            customer[field] = updateFields[field];
+          }
         }
-      } else {
-        res.status(400).json({ status: "fail", error: "Invalid field name" });
       }
+      console.log("customer object after update------------", customer);
+
+      // Save the updated customer document
+      const updatedCustomer = await customer.save();
+
+      res.status(200).json({
+        status: "success",
+        message: "Credential(s) updated successfully",
+        data: updatedCustomer,
+      });
     } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ status: "fail", error: "Internal server error" });
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error: ${error}`,
+        });
+      }
+    }
+  },
+
+  updateCustomerAddresses: async (req, res) => {
+    try {
+      const customerId = req.customerId;
+      const { title } = req.body; // geting adresss-type('shipping' or 'billing') from request body
+
+      // Validate that title is provided and is either 'shipping' or 'billing'
+      if (!title || (title !== "shipping" && title !== "billing")) {
+        return res
+          .status(400)
+          .json({ status: "fail", error: "Invalid address type" });
+      }
+
+      // Get the customer document by ID
+      const customer = await Customer.findById(customerId);
+
+      if (!customer) {
+        return res
+          .status(404)
+          .json({ status: "fail", error: "Customer not found" });
+      }
+
+      req?.body &&
+        (await customerAddressesUpdateSchema.validate(req?.body, {
+          abortEarly: false,
+        }));
+
+      // Update the address based on the specified title
+      if (title === "shipping") {
+        const { title, country, city, state, zip, streetAddress } = req.body;
+        customer.addresses.shippingAddress = {
+          title,
+          country,
+          city,
+          state,
+          zip,
+          streetAddress,
+        };
+      } else if (title === "billing") {
+        const { title, country, city, state, zip, streetAddress } = req.body;
+        customer.addresses.billingAddress = {
+          title,
+          country,
+          city,
+          state,
+          zip,
+          streetAddress,
+        };
+      }
+
+      // Save the updated customer document
+      const updatedCustomer = await customer.save();
+
+      res.status(200).json({
+        status: "success",
+        message: `${title} address updated successfully`,
+        data: updatedCustomer,
+      });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error: ${error}`,
+        });
+      }
     }
   },
 
