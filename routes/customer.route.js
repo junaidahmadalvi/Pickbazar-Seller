@@ -19,7 +19,7 @@ router.post("/", customerController.registerCustomer);
 router.post("/login", customerController.loginCustomer);
 
 // get all customers
-router.get("/", authenticateAdmin, customerController.getAllCustomer);
+router.get("/", customerController.getAllCustomer);
 
 // get single customer
 router.get("/:customerId", customerController.getCustomerById);

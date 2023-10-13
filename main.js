@@ -5,12 +5,16 @@ const cors = require("cors");
 const connection = require("./config/db");
 var bodyParser = require("body-parser");
 
+//------------- group rputes have to test on postman-----------------
+
 // require all routes
 
+const authRoute = require("./routes/auth.route");
 const adminRoute = require("./routes/admin.route");
 const customerRoute = require("./routes/customer.route");
 const sellerRoute = require("./routes/seller.route");
 const authorRoute = require("./routes/auhtor.route");
+const groupRoute = require("./routes/group.route");
 
 // DB-Connection
 connection();
@@ -31,6 +35,9 @@ app.get("/", (req, res) => {
 
 //-----defining base routes of all entities--------
 
+// auth for user-login-type
+app.use("/api/auth", authRoute);
+
 // admin route
 app.use("/api/admin", adminRoute);
 
@@ -42,6 +49,9 @@ app.use("/api/seller", sellerRoute);
 
 // author route
 app.use("/api/author", authorRoute);
+
+// group route
+app.use("/api/group", groupRoute);
 
 // start node server
 const PORT = process.env.PORT || 4000;

@@ -78,7 +78,7 @@ module.exports = {
         console.log("internal server error", error);
         res.status(500).json({
           status: "fail",
-          error: `Internal server Error: ${error}`,
+          error: `Internal server Error`,
         });
       }
     }
@@ -98,7 +98,6 @@ module.exports = {
 
       if (admin != null) {
         // check given password match with DB password of particular admin OR not and return true/false
-
         const isMatch = await bcrypt.compare(password, admin?.password);
 
         if (admin.email === email && isMatch) {

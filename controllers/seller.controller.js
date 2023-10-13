@@ -78,7 +78,7 @@ module.exports = {
         console.log("internal server error", error);
         res.status(500).json({
           status: "fail",
-          error: `Internal server Error: ${error}`,
+          error: `Internal server Error`,
         });
       }
     }
@@ -94,6 +94,7 @@ module.exports = {
           abortEarly: false,
         }));
       const { email, password } = req.body;
+
       let seller = await Seller.findOne({ email: email });
 
       if (seller != null) {

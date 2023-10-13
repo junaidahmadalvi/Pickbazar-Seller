@@ -6,31 +6,41 @@ var ObjectId = require("mongodb").ObjectId;
 
 //require Schemas (Mongoose and Yup)
 const {
-  Author,
-  addAuthorSchema,
-  authorUpdateSchema,
-} = require("../models/author.model");
+  Group,
+  addGroupSchema,
+  groupUpdateSchema,
+} = require("../models/group.model");
 
 module.exports = {
-  addAuthor: async (req, res) => {
+  addGroup: async (req, res) => {
     try {
-      let authorData = req.body;
+      let groupData = req.body;
 
-      authorData &&
-        (await addAuthorSchema.validate(authorData, {
+      groupData &&
+        (await addGroupSchema.validate(groupData, {
           abortEarly: false,
         }));
 
-      const author = new Author(authorData);
+      let group = await Group.findOne({ name: groupData?.name });
 
-      const result = await author.save();
-
-      result &&
-        res.status(200).send({
-          status: "success",
-          message: "Author added Successfully",
-          data: result,
+      // validate same name
+      if (group) {
+        res.status(400).json({
+          status: "fail",
+          error: "Try another group name",
         });
+      } else {
+        group = new Group(groupData);
+
+        const result = await group.save();
+
+        result &&
+          res.status(200).send({
+            status: "success",
+            message: "Group added Successfully",
+            data: result,
+          });
+      }
     } catch (error) {
       if (error.name === "ValidationError") {
         const validationErrors = {};
@@ -58,22 +68,22 @@ module.exports = {
     }
   },
 
-  // // show  all Authors
-  getAllAuthor: async (req, res) => {
+  // // show  all Groups
+  getAllGroup: async (req, res) => {
     try {
-      // get all authors data except password property
-      let author = await Author.find({});
+      // get all groups data
+      let group = await Group.find({});
 
-      if (author) {
+      if (group) {
         res.status(200).send({
           status: "success",
-          message: "Authors got successfully",
-          data: author,
+          message: "Groups got successfully",
+          data: group,
         });
       } else {
         res.status(400).json({
           status: "fail",
-          error: "Author not found",
+          error: "Group not found",
         });
       }
     } catch (error) {
@@ -85,23 +95,23 @@ module.exports = {
     }
   },
 
-  getAuthorById: async (req, res) => {
+  getGroupById: async (req, res) => {
     try {
-      const authorId = req.params?.authorId;
+      const groupId = req.params?.groupId;
 
-      // get desired author data
-      const author = await Author.findById(authorId);
+      // get desired group data
+      const group = await Group.findById(groupId);
 
-      if (author) {
+      if (group) {
         res.status(200).send({
           status: "success",
-          message: "Author founded",
-          data: author,
+          message: "Group founded",
+          data: group,
         });
       } else {
         res.status(400).json({
           status: "fail",
-          error: "Author not found",
+          error: "Group not found",
         });
       }
     } catch (error) {
@@ -113,44 +123,60 @@ module.exports = {
     }
   },
 
-  updateAuthor: async (req, res) => {
+  updateGroup: async (req, res) => {
     try {
-      const authorId = req?.params?.authorId;
+      const groupId = req?.params?.groupId;
 
       const updateFields = req.body;
 
       updateFields &&
-        (await authorUpdateSchema.validate(updateFields, {
+        (await groupUpdateSchema.validate(updateFields, {
           abortEarly: false,
         }));
 
-      const author = await Author.findById(authorId);
+      const group = await Group.findById(groupId);
 
-      if (!author) {
+      if (!group) {
         return res
           .status(404)
-          .json({ status: "fail", error: "Author not found" });
+          .json({ status: "fail", error: "Group not found" });
       }
 
       // Loop through the updateFields object to dynamically update each field
       for (const field in updateFields) {
         if (Object.hasOwnProperty.call(updateFields, field)) {
-          // Check if the field exists in the author schema
-          if (author.schema.path(field)) {
+          // Check if the field exists in the group schema
+          if (group.schema.path(field)) {
             // Update the field with the new value
-            author[field] = updateFields[field];
+            group[field] = updateFields[field];
           }
         }
       }
 
-      // Save the updated author document
-      const updatedAuthor = await author.save();
+      // let isNameExist = await Group.findOne({ name: group?.name });
 
-      res.status(200).json({
-        status: "success",
-        message: "Author updated successfully",
-        data: updatedAuthor,
-      });
+      // // validate email exist
+      // if (isNameExist) {
+      //   console.log("pre-finded group id", group?._id);
+      //   console.log("Current-finded group id", isNameExist?._id);
+
+      //   if (isNameExist?._id != group?._id) {
+      //     res.status(400).json({
+      //       status: "fail",
+      //       error: "-------Try another group name ",
+      //     });
+      //   }
+      // } else {
+      //   // Save the updated group document
+      const updatedGroup = await group.save();
+
+      updatedGroup &&
+        res.status(200).json({
+          status: "success",
+          message: "Group updated successfully",
+          data: updatedGroup,
+        });
+      // }
     } catch (error) {
       if (error.name === "ValidationError") {
         const validationErrors = {};
@@ -172,28 +198,28 @@ module.exports = {
         console.log("internal server error", error);
         res.status(500).json({
           status: "fail",
-          error: `Internal server Error: ${error}`,
+          error: `Internal server Error`,
         });
       }
     }
   },
 
-  deleteAuthor: async (req, res) => {
+  deleteGroup: async (req, res) => {
     try {
-      const authorId = req.params?.authorId;
+      const groupId = req.params?.groupId;
 
-      let deletedResult = await Author.findByIdAndDelete(authorId);
+      let deletedResult = await Group.findByIdAndDelete(groupId);
 
       if (deletedResult) {
         res.status(200).send({
           status: "fail",
-          message: "Author deleted",
+          message: "Group deleted",
           data: deletedResult,
         });
       } else {
         res.status(400).json({
           status: "fail",
-          error: "Author not found",
+          error: "Group not found",
         });
       }
     } catch (error) {
