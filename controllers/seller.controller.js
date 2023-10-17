@@ -5,168 +5,11 @@ const jwt = require("jsonwebtoken");
 var ObjectId = require("mongodb").ObjectId;
 
 //require Schemas (Mongoose and Yup)
-const {
-  Seller,
-  sellerRegisterSchema,
-  sellerLoginSchema,
-  sellerUpdateSchema,
-} = require("../models/seller.model");
+const { Seller, sellerUpdateSchema } = require("../models/seller.model");
+const { Group } = require("../models/group.model");
+const { Author } = require("../models/author.model");
 
 module.exports = {
-  registerSeller: async (req, res) => {
-    try {
-      let sellerData = req.body;
-
-      sellerData &&
-        (await sellerRegisterSchema.validate(sellerData, {
-          abortEarly: false,
-        }));
-
-      let seller = await Seller.findOne({ email: sellerData?.email });
-
-      // validate email exist
-      if (seller) {
-        res.status(400).json({
-          status: "fail",
-          error: "email already exist",
-        });
-      } else {
-        // validate password and confirmPassword match
-        if (sellerData?.password != sellerData?.confirmPassword) {
-          res.status(400).json({
-            status: "fail",
-            error: "Password and Confirm Password must same",
-          });
-        } else {
-          const salt = await bcrypt.genSalt(Number(process.env.SALT));
-          const hashpswd = await bcrypt.hash(sellerData?.password, salt);
-          let requestData = {
-            name: sellerData?.name,
-            email: sellerData?.email,
-            password: hashpswd,
-          };
-
-          seller = new Seller(requestData);
-
-          const result = await seller.save();
-
-          res.status(200).send({
-            status: "success",
-            message: "Seller added Successfully",
-            data: result,
-          });
-        }
-      }
-    } catch (error) {
-      if (error.name === "ValidationError") {
-        const validationErrors = {};
-
-        error.inner &&
-          error.inner.length > 0 &&
-          error.inner.forEach((validationError) => {
-            validationErrors[validationError.path] = validationError.message;
-          });
-
-        const entries = Object.entries(validationErrors);
-        entries &&
-          entries.length > 0 &&
-          res.status(400).json({
-            status: "fail",
-            error: entries[0][1],
-          });
-      } else {
-        console.log("internal server error", error);
-        res.status(500).json({
-          status: "fail",
-          error: `Internal server Error`,
-        });
-      }
-    }
-  },
-
-  // Seller login controller
-  loginSeller: async (req, res) => {
-    try {
-      const sellerData = req.body;
-
-      sellerData &&
-        (await sellerLoginSchema.validate(sellerData, {
-          abortEarly: false,
-        }));
-      const { email, password } = req.body;
-
-      let seller = await Seller.findOne({ email: email });
-
-      if (seller != null) {
-        // check given password match with DB password of particular seller OR not and return true/false
-
-        const isMatch = await bcrypt.compare(password, seller?.password);
-
-        if (seller.email === email && isMatch) {
-          if (seller.status === "active") {
-            // Generate JWT Token
-            const token = jwt.sign(
-              { sellerId: seller._id },
-              process.env.JWT_SECRET_KEY,
-              { expiresIn: "2d" }
-            );
-
-            res.setHeader("Authorization", `Bearer ${token}`);
-
-            //remove password field from seller object
-            delete seller?.password;
-            res.status(200).send({
-              status: "success",
-              message: "Login Success",
-              token: token,
-              data: seller,
-            });
-          } else {
-            res.status(400).send({
-              status: "fail",
-              error: "Access Denied by Admin",
-            });
-            console.log("Seller Access Denied by Admin");
-          }
-        } else {
-          res.status(400).json({
-            status: "fail",
-            error: "Email or password is not Valid",
-          });
-        }
-      } else {
-        res.status(400).json({
-          status: "fail",
-          error: "Email or password is not Valid",
-        });
-      }
-    } catch (error) {
-      if (error.name === "ValidationError") {
-        const validationErrors = {};
-
-        error.inner &&
-          error.inner.length > 0 &&
-          error.inner.forEach((validationError) => {
-            validationErrors[validationError.path] = validationError.message;
-          });
-
-        const entries = Object.entries(validationErrors);
-        entries &&
-          entries.length > 0 &&
-          res.status(400).json({
-            status: "fail",
-            error: entries[0][1],
-          });
-      } else {
-        console.log("internal server error", error);
-        res.status(500).json({
-          status: "fail",
-          error: `Internal server Error`,
-        });
-      }
-    }
-  },
-
   // // show  all Sellers
   getAllSeller: async (req, res) => {
     try {
@@ -196,7 +39,7 @@ module.exports = {
 
   getSellerById: async (req, res) => {
     try {
-      const sellerId = req.params?.sellerId;
+      const sellerId = req?.sellerId;
 
       // get desired seller data except password
       const seller = await Seller.findById(sellerId, "-password");
@@ -215,10 +58,17 @@ module.exports = {
       }
     } catch (error) {
       console.log("internal server error", error);
-      res.status(500).json({
-        status: "fail",
-        error: `Internal server Error`,
-      });
+      if (error.name === "CastError") {
+        res.status(500).json({
+          status: "fail",
+          error: `Invalid ID fomate `,
+        });
+      } else {
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error `,
+        });
+      }
     }
   },
 
@@ -362,6 +212,171 @@ module.exports = {
         res.status(400).json({
           status: "fail",
           error: "Seller not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
+  //----------------------Group---------------------
+
+  getAllGroup: async (req, res) => {
+    try {
+      // get all groups data
+      let group = await Group.find({});
+
+      if (group) {
+        res.status(200).send({
+          status: "success",
+          message: "Groups got successfully",
+          data: group,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Group not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
+  getGroupById: async (req, res) => {
+    try {
+      const groupId = req.params?.groupId;
+
+      // get desired group data
+      const group = await Group.findById(groupId);
+
+      if (group) {
+        res.status(200).send({
+          status: "success",
+          message: "Group founded",
+          data: group,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Group not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      if (error.name === "CastError") {
+        res.status(500).json({
+          status: "fail",
+          error: `Invalid ID fomate `,
+        });
+      } else {
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error `,
+        });
+      }
+    }
+  },
+
+  // ---------------------Author---------------
+  addAuthor: async (req, res) => {
+    try {
+      let authorData = req.body;
+
+      authorData &&
+        (await addAuthorSchema.validate(authorData, {
+          abortEarly: false,
+        }));
+
+      const author = new Author(authorData);
+
+      const result = await author.save();
+
+      result &&
+        res.status(200).send({
+          status: "success",
+          message: "Author added Successfully",
+          data: result,
+        });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error`,
+        });
+      }
+    }
+  },
+
+  // // show  all Authors
+  getAllAuthor: async (req, res) => {
+    try {
+      // get all authors data except password property
+      let author = await Author.find({});
+
+      if (author) {
+        res.status(200).send({
+          status: "success",
+          message: "Authors got successfully",
+          data: author,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Author not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
+  getAuthorById: async (req, res) => {
+    try {
+      const authorId = req.params?.authorId;
+
+      // get desired author data
+      const author = await Author.findById(authorId);
+
+      if (author) {
+        res.status(200).send({
+          status: "success",
+          message: "Author founded",
+          data: author,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Author not found",
         });
       }
     } catch (error) {
