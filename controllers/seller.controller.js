@@ -8,6 +8,11 @@ var ObjectId = require("mongodb").ObjectId;
 const { Seller, sellerUpdateSchema } = require("../models/seller.model");
 const { Group } = require("../models/group.model");
 const { Author } = require("../models/author.model");
+const {
+  Shop,
+  shopYupSchema,
+  shopYupUpdateAddressSchema,
+} = require("../models/shop.model");
 
 module.exports = {
   // // show  all Sellers
@@ -385,6 +390,223 @@ module.exports = {
         status: "fail",
         error: `Internal server Error`,
       });
+    }
+  },
+
+  // <------------------Shop-------------------->
+
+  addShop: async (req, res) => {
+    try {
+      debugger;
+
+      let shopData = req.body;
+
+      shopData &&
+        (await shopYupSchema.validate(shopData, {
+          abortEarly: false,
+        }));
+
+      const shop = new Shop(shopData);
+      console.log("shop", shop);
+
+      console.log("----------Before shop.save()");
+      const result = await shop.save();
+      console.log("-------------After shop.save()");
+      result &&
+        res.status(200).send({
+          status: "success",
+          message: "Shop added Successfully",
+          data: result,
+        });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+
+        console.log("error:---", error);
+        return res.status(400).json(error?.message);
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error`,
+        });
+      }
+    }
+  },
+
+  getShopById: async (req, res) => {
+    try {
+      const shopId = req.params?.shopId;
+      // get desired shop data
+      const shop = await Shop.findById(shopId);
+
+      if (shop) {
+        res.status(200).send({
+          status: "success",
+          message: "Shop founded",
+          data: shop,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Shop not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+
+      if (error.name === "CastError") {
+        res.status(500).json({
+          status: "fail",
+          error: `Invalid ID fomate `,
+        });
+      } else {
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error `,
+        });
+      }
+    }
+  },
+
+  updateShop: async (req, res) => {
+    try {
+      const shopId = req?.params?.shopId;
+
+      const updateFields = req.body;
+
+      updateFields &&
+        (await shopYupSchema.validate(updateFields, {
+          abortEarly: false,
+        }));
+
+      const shop = await Shop.findById(shopId);
+
+      if (!shop) {
+        return res
+          .status(404)
+          .json({ status: "fail", error: "Shop not found" });
+      }
+
+      // Loop through the updateFields object to dynamically update each field
+      for (const field in updateFields) {
+        if (Object.hasOwnProperty.call(updateFields, field)) {
+          // Check if the field exists in the shop schema
+          if (shop.schema.path(field)) {
+            // Update the field with the new value
+            shop[field] = updateFields[field];
+          }
+        }
+      }
+
+      // Save the updated shop document
+      const updatedShop = await shop.save();
+
+      res.status(200).json({
+        status: "success",
+        message: "Shop updated successfully",
+        data: updatedShop,
+      });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error: ${error}`,
+        });
+      }
+    }
+  },
+
+  updateShopAddresses: async (req, res) => {
+    try {
+      const shopId = req?.params?.shopId;
+
+      // Get the shop document by ID
+      const shop = await Shop.findById(shopId);
+
+      if (!shop) {
+        return res
+          .status(404)
+          .json({ status: "fail", error: "Shop not found" });
+      }
+      console.log("body", req.body);
+      req?.body &&
+        (await shopYupUpdateAddressSchema.validate(req?.body, {
+          abortEarly: false,
+        }));
+
+      const { country, city, state, zip, streetAddress } = req.body;
+      shop.shopAddress = {
+        country,
+        city,
+        state,
+        zip,
+        streetAddress,
+      };
+
+      // Save the updated shop document
+      const updatedShop = await shop.save();
+
+      res.status(200).json({
+        status: "success",
+        message: `shop address updated successfully`,
+        data: updatedShop,
+      });
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error: ${error}`,
+        });
+      }
     }
   },
 };

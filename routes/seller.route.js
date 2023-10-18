@@ -37,4 +37,13 @@ router.post("/addAuthor", sellerController.addAuthor);
 // get all authors
 router.get("/authors", sellerController.getAllAuthor);
 
+// <---------shops---------->
+router.post("/addShop", sellerController.addShop);
+// get single author
+router.get("/shop/:shopId", sellerController.getShopById);
+// dynamic update any field(Single or multiple) of author(only by admin)
+router.put("/updateShop/:shopId", sellerController.updateShop);
+// update shop address after validation
+router.patch("/shopAddress/:shopId", sellerController.updateShopAddresses);
+
 module.exports = router;
