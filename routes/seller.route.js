@@ -37,6 +37,13 @@ router.post("/addAuthor", sellerController.addAuthor);
 // get all authors
 router.get("/authors", sellerController.getAllAuthor);
 
+// <----------------Manufacturer--------------------->
+
+// add-manufacturer
+router.post("/addManufacturer", sellerController.addManufacturer);
+// get all manufacturers
+router.get("/manufacturers", sellerController.getAllManufacturer);
+
 // <---------shops---------->
 router.post("/addShop", sellerController.addShop);
 // get single author

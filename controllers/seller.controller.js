@@ -9,6 +9,11 @@ const { Seller, sellerUpdateSchema } = require("../models/seller.model");
 const { Group } = require("../models/group.model");
 const { Author } = require("../models/author.model");
 const {
+  Manufacturer,
+  yupManufacturerSchema,
+} = require("../models/manufacterer.model");
+
+const {
   Shop,
   shopYupSchema,
   shopYupUpdateAddressSchema,
@@ -393,11 +398,93 @@ module.exports = {
     }
   },
 
+  // <------------------Manufacturer-------------------->
+
+  addManufacturer: async (req, res) => {
+    try {
+      let manufacturerData = req.body;
+
+      manufacturerData &&
+        (await yupManufacturerSchema.validate(manufacturerData, {
+          abortEarly: false,
+        }));
+      const groupExist = await Group.findById(manufacturerData?.groupId);
+      if (groupExist) {
+        const manufacturer = new Manufacturer(manufacturerData);
+
+        const result = await manufacturer.save();
+
+        result &&
+          res.status(200).send({
+            status: "success",
+            message: "Manufacturer added Successfully",
+            data: result,
+          });
+      } else {
+        res.status(401).send({
+          status: "fail",
+          error: "Group not found",
+        });
+      }
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error`,
+        });
+      }
+    }
+  },
+
+  // // show  all Manufacturers
+  getAllManufacturer: async (req, res) => {
+    try {
+      // get all manufacturers data
+      let manufacturer = await Manufacturer.find({});
+
+      if (manufacturer) {
+        res.status(200).send({
+          status: "success",
+          message: "Manufacturers got successfully",
+          data: manufacturer,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Manufacturer not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
   // <------------------Shop-------------------->
 
   addShop: async (req, res) => {
     try {
-      debugger;
+      // debugger;
 
       let shopData = req.body;
 
@@ -406,18 +493,27 @@ module.exports = {
           abortEarly: false,
         }));
 
-      const shop = new Shop(shopData);
-      console.log("shop", shop);
+      const sellerExist = await Seller.findById(
+        shopData?.sellerId,
+        "-password"
+      );
 
-      console.log("----------Before shop.save()");
-      const result = await shop.save();
-      console.log("-------------After shop.save()");
-      result &&
-        res.status(200).send({
-          status: "success",
-          message: "Shop added Successfully",
-          data: result,
+      if (sellerExist) {
+        const shop = new Shop(shopData);
+
+        const result = await shop.save();
+        result &&
+          res.status(200).send({
+            status: "success",
+            message: "Shop added Successfully",
+            data: result,
+          });
+      } else {
+        res.status(400).send({
+          status: "fail",
+          error: "SellerId not Found",
         });
+      }
     } catch (error) {
       if (error.name === "ValidationError") {
         const validationErrors = {};
@@ -513,14 +609,23 @@ module.exports = {
         }
       }
 
-      // Save the updated shop document
-      const updatedShop = await shop.save();
+      const sellerExist = await Seller.findById(shop?.sellerId, "-password");
 
-      res.status(200).json({
-        status: "success",
-        message: "Shop updated successfully",
-        data: updatedShop,
-      });
+      if (sellerExist) {
+        // Save the updated shop document
+        const updatedShop = await shop.save();
+
+        res.status(200).json({
+          status: "success",
+          message: "Shop updated successfully",
+          data: updatedShop,
+        });
+      } else {
+        res.status(400).send({
+          status: "fail",
+          error: "SellerId not Found",
+        });
+      }
     } catch (error) {
       if (error.name === "ValidationError") {
         const validationErrors = {};

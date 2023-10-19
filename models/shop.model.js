@@ -4,10 +4,11 @@ const yup = require("yup");
 // mongoose schema
 const shopModel = new mongoose.Schema(
   {
-    // SellerId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Seller", // Reference to the "Seller" model
-    // },
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller", // Reference to the "Seller" model
+      required: true,
+    },
     name: {
       type: String,
       required: true,
@@ -68,11 +69,11 @@ const shopModel = new mongoose.Schema(
 //---------- Shop Yup(validating schemas)---------
 
 const shopYupSchema = yup.object().shape({
-  // SellerId: yup
-  //   .string()
-  //   .trim()
-  //   .required("SellerId is required")
-  //   .matches(/^[0-9a-fA-F]{24}$/, "Invalid SellerId format"), // Ensure it's a valid ObjectId
+  sellerId: yup
+    .string()
+    .trim()
+    .required("SellerId is required")
+    .matches(/^[0-9a-fA-F]{24}$/, "Invalid SellerId format"), // Ensure it's a valid ObjectId
 
   name: yup
     .string()
