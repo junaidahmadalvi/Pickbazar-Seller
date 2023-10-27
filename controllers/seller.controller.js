@@ -26,6 +26,7 @@ const {
 } = require("../models/categories.model");
 
 const { Product, yupProductSchema } = require("../models/product.model");
+const { Order } = require("../models/order.model");
 
 module.exports = {
   // // show  all Sellers
@@ -1103,6 +1104,155 @@ module.exports = {
         status: "fail",
         error: `Internal server Error`,
       });
+    }
+  },
+
+  // <----------Orders------------------------>
+
+  // // show  all Orders
+  getAllOrder: async (req, res) => {
+    try {
+      const sellerId = req.sellerId;
+      const shop = await Shop.findOne({ sellerId: sellerId });
+      // get all orders data
+
+      if (!shop) {
+        return res.status(401).json({
+          status: "fail",
+          error: "No orders found for that particular shop",
+        });
+      }
+
+      const orders = await Order.find({
+        items: {
+          $elemMatch: {
+            shopId: shop?._id,
+          },
+        },
+      });
+
+      if (orders && orders.length > 0) {
+        res.status(200).json({
+          status: "success",
+          message: "Orders founded for that specified seller",
+          data: orders,
+        });
+      } else {
+        res.status(404).json({
+          status: "fail",
+          error: "No orders found for that specified seller",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
+  getOrderById: async (req, res) => {
+    try {
+      const orderId = req.params?.orderId;
+      const customerId = req.customerId;
+
+      // get desired order data
+      const order = await Order.findOne({
+        _id: orderId,
+        customerId: customerId,
+      });
+
+      if (order) {
+        res.status(200).send({
+          status: "success",
+          message: "Order founded",
+          data: order,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Order not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      if (error.name === "CastError") {
+        res.status(500).json({
+          status: "fail",
+          error: `Invalid ID fomate `,
+        });
+      } else {
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error `,
+        });
+      }
+    }
+  },
+
+  updateOrderStatus: async (req, res) => {
+    try {
+      const orderId = req?.params?.orderId;
+
+      const updateFields = req.body;
+
+      const order = await Order.findById(orderId);
+
+      if (!order) {
+        return res
+          .status(404)
+          .json({ status: "fail", error: "Order not found" });
+      }
+
+      const { status } = req.body;
+      if (
+        status === "Pending" ||
+        status === "Order Processing" ||
+        status === "Order At Local Facility" ||
+        status === "Order Out For Delivery" ||
+        status === "Order Completed"
+      ) {
+        const updatedOrder = await order.updateOne(
+          { _id: orderId },
+          { $set: { status: status } }
+        );
+
+        updatedOrder &&
+          res.status(200).json({
+            status: "success",
+            message: "Order updated successfully",
+            data: updatedOrder,
+          });
+      } else {
+        return res
+          .status(404)
+          .json({ status: "fail", error: "Invalid Status" });
+      }
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error`,
+        });
+      }
     }
   },
 };

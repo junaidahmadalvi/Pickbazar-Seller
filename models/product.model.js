@@ -121,4 +121,5 @@ const Product = new mongoose.model("Product", productModel);
 module.exports = {
   Product,
   yupProductSchema,
+  productModel,
 };
