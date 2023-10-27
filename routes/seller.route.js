@@ -29,6 +29,26 @@ router.get("/groups", sellerController.getAllGroup);
 // get single group
 router.get("/group/:groupId", sellerController.getGroupById);
 
+// <-------------categories----------->
+
+// get all categories
+router.get("/categories", sellerController.getAllCategory);
+// get single category
+router.get("/category/:categoryId", sellerController.getCategoryById);
+
+// <----------Products------------------------>
+
+// add-product
+router.post("/addProduct", sellerController.addProduct);
+// get all product
+router.get("/products", sellerController.getAllShopProduct);
+// get single product
+router.get("/product/:productId", sellerController.getShopProductById);
+// dynamic update any field(Single or multiple) of product
+router.put("/updateProduct/:productId", sellerController.updateProduct);
+//---Delete Product by id
+router.delete("/deleteProduct/:productId", sellerController.deleteProduct);
+
 // <---------Author--------->
 
 // add-author
@@ -45,6 +65,7 @@ router.post("/addManufacturer", sellerController.addManufacturer);
 router.get("/manufacturers", sellerController.getAllManufacturer);
 
 // <---------shops---------->
+
 router.post("/addShop", sellerController.addShop);
 // get single author
 router.get("/shop/:shopId", sellerController.getShopById);

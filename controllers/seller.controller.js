@@ -19,6 +19,14 @@ const {
   shopYupUpdateAddressSchema,
 } = require("../models/shop.model");
 
+const {
+  Category,
+  addCategorySchema,
+  categoryUpdateSchema,
+} = require("../models/categories.model");
+
+const { Product, yupProductSchema } = require("../models/product.model");
+
 module.exports = {
   // // show  all Sellers
   getAllSeller: async (req, res) => {
@@ -712,6 +720,389 @@ module.exports = {
           error: `Internal server Error: ${error}`,
         });
       }
+    }
+  },
+
+  // <------------Categories-------------->
+
+  // // show  all Categorys
+  getAllCategory: async (req, res) => {
+    try {
+      // get all categorys data
+      let category = await Category.find({});
+
+      if (category) {
+        res.status(200).send({
+          status: "success",
+          message: "Categorys got successfully",
+          data: category,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Category not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
+  getCategoryById: async (req, res) => {
+    try {
+      const categoryId = req.params?.categoryId;
+
+      // get desired category data
+      const category = await Category.findById(categoryId);
+
+      if (category) {
+        res.status(200).send({
+          status: "success",
+          message: "Category founded",
+          data: category,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Category not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      if (error.name === "CastError") {
+        res.status(500).json({
+          status: "fail",
+          error: `Invalid ID fomate `,
+        });
+      } else {
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error `,
+        });
+      }
+    }
+  },
+
+  // <------------Products-------------->
+
+  addProduct: async (req, res) => {
+    try {
+      let productData = req.body;
+
+      productData &&
+        (await yupProductSchema.validate(productData, {
+          abortEarly: false,
+        }));
+
+      let groupExist = await Group.findOne({ name: productData?.groupName });
+
+      // validate same name
+      if (!groupExist) {
+        res.status(400).json({
+          status: "fail",
+          error: "Invalid Group Name",
+        });
+      } else {
+        productData.groupId = groupExist?._id;
+        let categoryExist = await Category.findOne({
+          name: productData?.categoryName,
+        });
+
+        if (categoryExist) {
+          productData.categoryId = categoryExist?._id;
+
+          let authorExist = await Author.findOne({
+            name: productData?.authorName,
+          });
+
+          if (authorExist) {
+            let manufacturerExist = await Manufacturer.findOne({
+              name: productData?.manufacturerName,
+            });
+            if (manufacturerExist) {
+              let shopExist = await Shop.findById(productData?.shopId);
+
+              if (shopExist) {
+                productData.shopName = shopExist?.name;
+
+                const product = new Product(productData);
+
+                const result = await product.save();
+
+                result &&
+                  res.status(200).send({
+                    status: "success",
+                    message: "Product added Successfully",
+                    data: result,
+                  });
+              } else {
+                res.status(400).json({
+                  status: "fail",
+                  error: "Shop not Exist",
+                });
+              }
+            } else {
+              res.status(400).json({
+                status: "fail",
+                error: "Manufacturer not Exist",
+              });
+            }
+          } else {
+            res.status(400).json({
+              status: "fail",
+              error: "Author not Exist",
+            });
+          }
+        } else {
+          res.status(400).json({
+            status: "fail",
+            error: "category not Exist",
+          });
+        }
+      }
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error`,
+        });
+      }
+    }
+  },
+
+  // // show  all Products
+  getAllShopProduct: async (req, res) => {
+    try {
+      const sellerId = req.sellerId;
+      console.log("sellerId:", sellerId);
+      const shop = await Shop.findOne({ sellerId: sellerId });
+      console.log("Shop:", shop);
+      // get all products data
+      let product = await Product.find({ shopId: shop?._id });
+
+      if (product) {
+        res.status(200).send({
+          status: "success",
+          message: "Products got successfully",
+          data: product,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Product not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
+    }
+  },
+
+  getShopProductById: async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const shopId = req.body;
+      // get desired product data
+      const product = await Product.findOne({ _id: productId, shopId: shopId });
+
+      if (product) {
+        res.status(200).send({
+          status: "success",
+          message: "Product founded",
+          data: product,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Product not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      if (error.name === "CastError") {
+        res.status(500).json({
+          status: "fail",
+          error: `Invalid ID fomate `,
+        });
+      } else {
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error `,
+        });
+      }
+    }
+  },
+
+  updateProduct: async (req, res) => {
+    try {
+      const { productId } = req?.params;
+      const shopId = req.body;
+
+      const updateFields = req.body;
+
+      updateFields &&
+        (await yupProductSchema.validate(updateFields, {
+          abortEarly: false,
+        }));
+
+      const product = await Product.findOne({ _id: productId, shopId: shopId });
+
+      if (!product) {
+        return res
+          .status(404)
+          .json({ status: "fail", error: "Product not found" });
+      }
+
+      // Loop through the updateFields object to dynamically update each field
+      for (const field in updateFields) {
+        if (Object.hasOwnProperty.call(updateFields, field)) {
+          // Check if the field exists in the product schema
+          if (product.schema.path(field)) {
+            // Update the field with the new value
+            product[field] = updateFields[field];
+          }
+        }
+      }
+
+      let groupExist = await Group.findOne({ name: product?.groupName });
+
+      // validate same name
+      if (!groupExist) {
+        res.status(400).json({
+          status: "fail",
+          error: "Invalid Group Name",
+        });
+      } else {
+        product.groupId = groupExist?._id;
+        let categoryExist = await Category.findOne({
+          name: product?.categoryName,
+        });
+
+        if (categoryExist) {
+          product.categoryId = categoryExist?._id;
+
+          let authorExist = await Author.findOne({
+            name: product?.authorName,
+          });
+
+          if (authorExist) {
+            let manufacturerExist = await Manufacturer.findOne({
+              name: product?.manufacturerName,
+            });
+            if (manufacturerExist) {
+              let shopExist = await Shop.findById(product?.shopId);
+
+              if (shopExist) {
+                product.shopName = shopExist?.name;
+
+                const updatedProduct = await product.save();
+
+                updatedProduct &&
+                  res.status(200).json({
+                    status: "success",
+                    message: "Product updated successfully",
+                    data: updatedProduct,
+                  });
+              } else {
+                res.status(400).json({
+                  status: "fail",
+                  error: "Shop not Exist",
+                });
+              }
+            } else {
+              res.status(400).json({
+                status: "fail",
+                error: "Manufacturer not Exist",
+              });
+            }
+          } else {
+            res.status(400).json({
+              status: "fail",
+              error: "Author not Exist",
+            });
+          }
+        } else {
+          res.status(400).json({
+            status: "fail",
+            error: "category not Exist",
+          });
+        }
+      }
+    } catch (error) {
+      if (error.name === "ValidationError") {
+        const validationErrors = {};
+
+        error.inner &&
+          error.inner.length > 0 &&
+          error.inner.forEach((validationError) => {
+            validationErrors[validationError.path] = validationError.message;
+          });
+
+        const entries = Object.entries(validationErrors);
+        entries &&
+          entries.length > 0 &&
+          res.status(400).json({
+            status: "fail",
+            error: entries[0][1],
+          });
+      } else {
+        console.log("internal server error", error);
+        res.status(500).json({
+          status: "fail",
+          error: `Internal server Error`,
+        });
+      }
+    }
+  },
+
+  deleteProduct: async (req, res) => {
+    try {
+      const productId = req.params?.productId;
+
+      let deletedResult = await Product.findByIdAndDelete(productId);
+
+      if (deletedResult) {
+        res.status(200).send({
+          status: "fail",
+          message: "Product deleted",
+          data: deletedResult,
+        });
+      } else {
+        res.status(400).json({
+          status: "fail",
+          error: "Product not found",
+        });
+      }
+    } catch (error) {
+      console.log("internal server error", error);
+      res.status(500).json({
+        status: "fail",
+        error: `Internal server Error`,
+      });
     }
   },
 };
